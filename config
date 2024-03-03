@@ -20,6 +20,7 @@ set $term alacritty
 # on the original workspace that the command was run on.
 # set $menu dmenu_path | dmenu | xargs swaymsg exec --
 set $menu "rofi -combi-modes drun,run -show combi -show-icons"
+set $calc "rofi -show calc"
 
 ### Output configuration
 #
@@ -64,7 +65,11 @@ workspace 9 output HDMI-A-1
 input "type:keyboard" {
     xkb_layout us,ru
     xkb_variant dvorak,
+    xkb_options grp:win_space_toggle
 }
+
+bindsym Ctrl+F1 input "type:keyboard" xkb_switch_layout 0
+bindsym Ctrl+F2 input "type:keyboard" xkb_switch_layout 1
 
 ### Key bindings
 #
@@ -78,6 +83,7 @@ input "type:keyboard" {
 
     # Start your launcher
     bindsym $mod+w exec $menu
+    bindsym $mod+n exec $calc
 
     # Drag floating windows by holding down $mod and left mouse button.
     # Resize them with right mouse button + $mod.
@@ -160,10 +166,10 @@ input "type:keyboard" {
     bindsym $mod+f fullscreen
 
     # Toggle the current focus between tiling and floating mode
-    bindsym $mod+Shift+space floating toggle
+    bindsym $mod+Shift+f floating toggle
 
     # Swap focus between the tiling area and the floating area
-    bindsym $mod+space focus mode_toggle
+    bindsym $mod+t focus mode_toggle
 
     # Move focus to the parent container
     bindsym $mod+a focus parent

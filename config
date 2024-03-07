@@ -19,7 +19,7 @@ set $term alacritty
 # Note: pass the final command to swaymsg so that the resulting window can be opened
 # on the original workspace that the command was run on.
 # set $menu dmenu_path | dmenu | xargs swaymsg exec --
-set $menu "rofi -combi-modes drun,run -show combi -show-icons"
+set $menu "BROWSER=/usr/local/bin/firefox-dev rofi -combi-modes drun,run -show combi -show-icons"
 set $calc "rofi -show calc"
 
 ### Output configuration
@@ -208,6 +208,7 @@ mode "resize" {
     bindsym Return mode "default"
     bindsym Escape mode "default"
 }
+
 bindsym $mod+r mode "resize"
 
 #

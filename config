@@ -24,7 +24,7 @@ set $down j
 set $up k
 set $right l
 # Your preferred terminal emulator
-set $term alacritty
+set $term kitty
 # Your preferred application launcher
 # Note: pass the final command to swaymsg so that the resulting window can be opened
 # on the original workspace that the command was run on.
@@ -32,6 +32,7 @@ set $term alacritty
 set $menu "BROWSER=/usr/local/bin/firefox-dev rofi -monitor 1 -combi-modes drun,run -show combi -show-icons"
 set $calc "rofi -monitor 1 -show calc"
 set $screenshot 'grim -g "$(slurp)" - | wl-copy'
+set $screenshotAll 'grim - | wl-copy'
 
 ### Output configuration
 #
@@ -223,6 +224,7 @@ mode "resize" {
 bindsym $mod+r mode "resize"
 
 bindsym Print exec $screenshot
+bindsym Print+Shift exec $screenshotAll
 #
 # Status Bar:
 #

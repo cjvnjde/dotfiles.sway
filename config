@@ -41,6 +41,9 @@ output * bg ~/.config/sway/asstets/bg.jpg fill
 #
 # Example configuration:
 #
+# vertical view
+#output HDMI-A-1 resolution 1920x1080 position 0,0 transform 270
+#output DP-1 resolution 2560x1440 position 1080,480
 output HDMI-A-1 resolution 1920x1080 position 0,0
 output DP-1 resolution 2560x1440 position 1920,0
 workspace 9 output HDMI-A-1
@@ -51,10 +54,10 @@ workspace 9 output HDMI-A-1
 #
 # Example configuration:
 #
-exec swayidle -w \
-        timeout 300 'swaylock -f -c 000000' \
-        timeout 600 'swaymsg "output * power off"' resume 'swaymsg "output * power on"' \
-        before-sleep 'swaylock -f -c 000000'
+ exec swayidle -w \
+          timeout 300 'swaylock -f -c 000000' \
+          timeout 600 'swaymsg "output * power off"' resume 'swaymsg "output * power on"' \
+          before-sleep 'swaylock -f -c 000000'
 
 # This will lock your screen after 300 seconds of inactivity, then turn off
 # your displays after another 300 seconds, and turn your screens back on when

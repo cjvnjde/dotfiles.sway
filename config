@@ -33,8 +33,8 @@ set $menu "BROWSER=/usr/local/bin/firefox-dev rofi -monitor 1 -combi-modes drun,
 set $calc "rofi -monitor 1 -show calc"
 #set $screenshot 'grim -g "$(slurp)" - | wl-copy'
 #set $screenshotAll 'grim - | wl-copy'
-
-set $screenshot 'XDG_CURRENT_DESKTOP=Sway QT_QPA_PLATFORM=wayland flameshot gui'
+set $screenshots_pat $HOME/storage/Screenshots
+set $screenshot 'XDG_CURRENT_DESKTOP=Sway QT_QPA_PLATFORM=wayland flameshot gui --clipboard --path $screenshots_path'
 
 ### Output configuration
 #

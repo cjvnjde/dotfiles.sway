@@ -33,13 +33,13 @@ set $menu "BROWSER=/usr/local/bin/firefox-dev rofi -monitor 1 -combi-modes drun,
 set $calc "rofi -monitor 1 -show calc"
 #set $screenshot 'grim -g "$(slurp)" - | wl-copy'
 #set $screenshotAll 'grim - | wl-copy'
-set $screenshots_pat $HOME/storage/Screenshots
+set $screenshots_pat $HOME/Pictures
 set $screenshot 'XDG_CURRENT_DESKTOP=Sway QT_QPA_PLATFORM=wayland flameshot gui --clipboard --path $screenshots_path'
 
 ### Output configuration
 #
 # Default wallpaper (more resolutions are available in /usr/share/backgrounds/sway/)
-output * bg ~/.config/sway/asstets/bg.jpg fill
+output "*" bg "/home/cjvnjde/.config/sway/asstets/bg.jpg" fill
 #
 # Example configuration:
 #
@@ -47,7 +47,7 @@ output * bg ~/.config/sway/asstets/bg.jpg fill
 #output HDMI-A-1 resolution 1920x1080 position 0,0 transform 270
 #output DP-1 resolution 2560x1440 position 1080,480
 output HDMI-A-1 resolution 1920x1080 position 0,0
-output DP-1 resolution 2560x1440 position 1920,0
+output DP-1 resolution 2560x1440 position 1920,-360
 workspace 9 output HDMI-A-1
 # fix for dual monitor 
 for_window [title="flameshot" app_id="flameshot"] fullscreen enable global
@@ -59,9 +59,9 @@ for_window [title="flameshot" app_id="flameshot"] fullscreen enable global
 # Example configuration:
 #
  exec swayidle -w \
-          timeout 300 'swaylock -f -c 000000' \
+          timeout 300 'swaylock -f -c 1e1e2e' \
           timeout 600 'swaymsg "output * power off"' resume 'swaymsg "output * power on"' \
-          before-sleep 'swaylock -f -c 000000'
+          before-sleep 'swaylock -f -c 1e1e2e'
 
 # This will lock your screen after 300 seconds of inactivity, then turn off
 # your displays after another 300 seconds, and turn your screens back on when

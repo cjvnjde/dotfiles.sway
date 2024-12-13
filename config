@@ -29,12 +29,11 @@ set $term ~/.local/bin/kitty
 # Note: pass the final command to swaymsg so that the resulting window can be opened
 # on the original workspace that the command was run on.
 # set $menu dmenu_path | dmenu | xargs swaymsg exec --
-set $menu "BROWSER=/usr/local/bin/firefox-dev rofi -monitor 1 -combi-modes drun,run -show combi -show-icons"
+set $menu "rofi -monitor 1 -combi-modes drun,run -show combi -show-icons"
 set $calc "rofi -monitor 1 -show calc"
 #set $screenshot 'grim -g "$(slurp)" - | wl-copy'
 #set $screenshotAll 'grim - | wl-copy'
-set $screenshots_pat $HOME/Pictures
-set $screenshot 'XDG_CURRENT_DESKTOP=Sway QT_QPA_PLATFORM=wayland flameshot gui --clipboard --path $screenshots_path'
+set $screenshot '/home/cjvnjde/.config/sway/scripts/screenshot.sh'
 
 ### Output configuration
 #
@@ -53,8 +52,7 @@ workspace 9 output HDMI-A-1
 for_window [title="flameshot" app_id="flameshot"] fullscreen enable global
 #
 # You can get the names of your outputs by running: swaymsg -t get_outputs
-
-default_border none
+default_border pixel
 
 ### Idle configuration
 #

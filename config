@@ -24,7 +24,8 @@ set $down j
 set $up k
 set $right l
 # Your preferred terminal emulator
-set $term ~/.local/bin/kitty 
+# set $term ~/.local/bin/kitty 
+set $term alacritty
 # Your preferred application launcher
 # Note: pass the final command to swaymsg so that the resulting window can be opened
 # on the original workspace that the command was run on.
@@ -45,8 +46,8 @@ output "*" bg "/home/cjvnjde/.config/sway/asstets/bg.jpg" fill
 # vertical view
 #output HDMI-A-1 resolution 1920x1080 position 0,0 transform 270
 #output DP-1 resolution 2560x1440 position 1080,480
-output HDMI-A-1 resolution 1920x1080 position 0,0
-output DP-1 resolution 2560x1440 position 1920,-360
+output HDMI-A-1 disable
+output DP-1 resolution 2560x1440
 workspace 9 output HDMI-A-1
 # fix for dual monitor 
 for_window [title="flameshot" app_id="flameshot"] fullscreen enable global

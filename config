@@ -21,12 +21,13 @@ set $term alacritty
 # set $menu dmenu_path | dmenu | xargs swaymsg exec --
 set $menu "rofi -monitor 1 -combi-modes drun,run -show combi -show-icons"
 set $calc "rofi -monitor 1 -show calc"
+set $bar "$HOME/.config/waybar/start-waybar.sh -t sway"
 #set $screenshot 'grim -g "$(slurp)" - | wl-copy'
 #set $screenshotAll 'grim - | wl-copy'
-set $screenshot '/home/cjvnjde/.config/sway/scripts/screenshot.sh'
+set $screenshot '$HOME/.config/sway/scripts/screenshot.sh'
 
 ### Output configuration
-output "*" bg "/home/cjvnjde/.config/sway/asstets/bg.jpg" fill
+output "*" bg "$HOME/.config/sway/asstets/bg.jpg" fill
 # vertical view
 #output HDMI-A-1 resolution 1920x1080 position 0,0 transform 270
 #output DP-1 resolution 2560x1440 position 1080,480
@@ -174,9 +175,6 @@ bindsym $mod+r mode "resize"
 
 bindsym Print exec $screenshot
 
-# Status Bar:
-bar {
-  swaybar_command waybar
-}
+ exec swaymsg 'exec $bar' 
 
 include /etc/sway/config.d/*

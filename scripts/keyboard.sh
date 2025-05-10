@@ -47,10 +47,6 @@ if ! [[ "$xkb_active_layout_index" =~ ^[0-9]+$ ]] || [[ "$xkb_active_layout_inde
     xkb_active_layout_index=0
 fi
 
-# The name of the currently active layout (with spaces replaced by underscores)
-# This is derived from DEFAULT_LANGUAGES and the validated xkb_active_layout_index
-# xkb_active_layout_name="${DEFAULT_LANGUAGES[$xkb_active_layout_index]}" # Not strictly needed if we use index
-
 # Function to initialize cache files and directories
 _init_cache() {
     mkdir -p "$LANG_SWITCHER_DIR"
@@ -77,7 +73,7 @@ _init_cache() {
         else
             # This case should be prevented by earlier checks that exit if DEFAULT_LANGUAGES is empty.
             echo "" > "$LANGUAGES_FILE" 
-            # dunstify "Language Switcher Warning" "LANGUAGES_FILE initialized empty as no default languages found."
+            dunstify "Language Switcher Warning" "LANGUAGES_FILE initialized empty as no default languages found."
         fi
     fi
 
@@ -89,7 +85,6 @@ _init_cache() {
 # Function to get the current language from the script's perspective (first in LANGUAGES_FILE)
 _get_current_lang() {
     # This function assumes _init_cache has been called by the invoking function.
-    # LANGUAGES_FILE should be populated and its first entry should reflect the active or intended active language.
     local languages_str
     languages_str=$(cat "$LANGUAGES_FILE" 2>/dev/null) # Suppress error if file non-existent
     local langs_arr
@@ -99,7 +94,6 @@ _get_current_lang() {
         echo "${langs_arr[0]}"
     else
         # Fallback: If LANGUAGES_FILE is empty/unreadable, report what system had at script start.
-        # This indicates an issue, as _init_cache should prevent this.
         if [[ "$xkb_active_layout_index" -lt "${#DEFAULT_LANGUAGES[@]}" ]]; then
              echo "${DEFAULT_LANGUAGES[$xkb_active_layout_index]}"
         else
@@ -122,22 +116,41 @@ _swap_first_two_langs() {
     return 1 # Not enough languages to swap
 }
 
-# Cycles languages: moves the last language to the first position in the array (passed by name reference)
-_cycle_langs_last_to_first() {
-    local -n arr_ref=$1 # Pass array by reference (requires bash 4.3+)
+# New function to handle cycling when Super is held.
+# For 2 languages, it swaps them (toggles).
+# For 3+ languages, it swaps the 1st and 3rd elements, keeping the 2nd "sticky".
+_cycle_with_sticky_second() {
+    local -n arr_ref=$1 # Pass array by reference
     local num_langs=${#arr_ref[@]}
 
-    if [[ $num_langs -ge 2 ]]; then
-        local last_lang="${arr_ref[$((num_langs - 1))]}"
-        # Shift elements to the right to make space at the beginning
-        for (( i=num_langs-1; i>0; i-- )); do
-            arr_ref[$i]="${arr_ref[$((i-1))]}"
-        done
-        arr_ref[0]="$last_lang" # Place the original last element at the front
-        return 0 # Success
+    if [[ $num_langs -lt 2 ]]; then
+        # This case should ideally be caught before calling this function,
+        # as toggle_language checks for num_langs < 2.
+        return 1 # Indicate failure or not applicable
     fi
-    return 1 # Not enough languages to cycle
+
+    if [[ $num_langs -eq 2 ]]; then
+        # For exactly two languages, just swap them. This achieves a toggle effect
+        # on repeated calls while Super is held.
+        _swap_first_two_langs arr_ref
+        return 0
+    fi
+
+    # For num_langs >= 3:
+    # The logic is to swap the element at index 0 with the element at index 2.
+    # The element at index 1 remains "sticky".
+    # Example: [L0, L1, L2, L3, ...] becomes [L2, L1, L0, L3, ...]
+    local lang_at_idx_0="${arr_ref[0]}"
+    local lang_at_idx_2="${arr_ref[2]}" # Assumes num_langs >= 3
+
+    arr_ref[0]="$lang_at_idx_2" # Element formerly at index 2 moves to the front
+    arr_ref[2]="$lang_at_idx_0" # Element formerly at index 0 moves to index 2
+    # Element at index 1 (arr_ref[1]) is untouched, acting as the "sticky" second.
+    # Elements from index 3 onwards are also untouched by this specific operation.
+
+    return 0 # Success
 }
+
 
 # Action when Super key is pressed
 press_super() {
@@ -147,7 +160,7 @@ press_super() {
     
     local current_lang_display
     current_lang_display=$(_get_current_lang)
-    # dunstify "Language Switcher" "Super PRESSED. Current: $current_lang_display. Space count reset."
+    dunstify "Language Switcher" "Super PRESSED. Current: $current_lang_display. Space count reset."
 }
 
 # Action when Super key is released
@@ -157,7 +170,7 @@ release_super() {
     
     local current_lang_display
     current_lang_display=$(_get_current_lang)
-    # dunstify "Language Switcher" "Super RELEASED. Current: $current_lang_display."
+    dunstify "Language Switcher" "Super RELEASED. Current: $current_lang_display."
 }
 
 # Main logic for toggling/cycling language
@@ -177,7 +190,7 @@ toggle_language() {
 
     # Handle cases where LANGUAGES_FILE might be empty or corrupted
     if [[ $num_langs -eq 0 ]]; then
-        # dunstify "Language Switcher" "Warning: Language cache empty. Attempting to re-initialize..."
+        dunstify "Language Switcher" "Warning: Language cache empty. Attempting to re-initialize..."
         
         # Fetch live system data for re-initialization
         local current_inputs_live_recovery
@@ -190,7 +203,6 @@ toggle_language() {
             active_idx_live_recovery=$(echo "$json_data_live_recovery" | jq -r '.xkb_active_layout_index // "0"')
             
             # Use the global DEFAULT_LANGUAGES for the list of names and their indices.
-            # The critical part is getting the *current active index* for *that list*.
             if [[ "$active_idx_live_recovery" -lt "${#DEFAULT_LANGUAGES[@]}" ]]; then
                 local active_lang_now="${DEFAULT_LANGUAGES[$active_idx_live_recovery]}"
                 
@@ -203,7 +215,7 @@ toggle_language() {
                 done
                 echo "${langs_arr[*]}" > "$LANGUAGES_FILE" # Persist this recovery
                 num_langs=${#langs_arr[@]} # Update num_langs
-                # dunstify "Language Switcher" "Re-initialized languages. Active: ${langs_arr[0]}"
+                dunstify "Language Switcher" "Re-initialized languages. Active: ${langs_arr[0]}"
             else
                  dunstify -u critical "Language Switcher Error" "Could not re-initialize: live active index out of bounds."
                  return 1 # Critical failure to re-initialize
@@ -219,9 +231,9 @@ toggle_language() {
         dunstify -u critical "Language Switcher Error" "No languages available even after re-init attempt."
         return 1
     elif [[ $num_langs -eq 1 ]]; then
-        # dunstify "Language Switcher" "Only one language configured: ${langs_arr[0]}. No switch possible."
+        dunstify "Language Switcher" "Only one language configured: ${langs_arr[0]}. No switch possible."
         return 0
-    fi
+    fi # At this point, num_langs >= 2
 
     local action_description=""
     local final_message_segment=""
@@ -232,10 +244,12 @@ toggle_language() {
         echo "$current_space_press_for_this_action" > "$SPACE_COUNT_FILE" # Update persisted count
 
         if [[ "$current_space_press_for_this_action" -eq 1 ]]; then
+            # First space press while Super is held: Toggle first two
             _swap_first_two_langs langs_arr
             action_description="TOGGLE"
         else
-            _cycle_langs_last_to_first langs_arr
+            # Subsequent space presses while Super is held: Use the new cycle logic
+            _cycle_with_sticky_second langs_arr
             action_description="CYCLE"
         fi
         final_message_segment="$action_description to ${langs_arr[0]} (Super held, ${current_space_press_for_this_action}x space)"
@@ -263,7 +277,7 @@ toggle_language() {
         if swaymsg input "$identifier" xkb_switch_layout "$target_layout_system_index"; then
             # If switch is successful, save the new language order to the cache file
             echo "${langs_arr[*]}" > "$LANGUAGES_FILE"
-            # dunstify "Language Switcher" "Switched to $target_layout_name. ($final_message_segment)"
+            dunstify "Language Switcher" "Switched to $target_layout_name. ($final_message_segment)"
         else
             dunstify -u critical "Language Switcher Error" "Failed to execute swaymsg to switch layout to $target_layout_name (Index: $target_layout_system_index)."
             # LANGUAGES_FILE is not updated, as the switch failed. Script's cache might be out of sync.
@@ -271,7 +285,6 @@ toggle_language() {
     else
         # This should ideally not happen if langs_arr contains valid names from DEFAULT_LANGUAGES
         dunstify -u critical "Language Switcher Error" "Target layout '$target_layout_name' not found in system layouts. Cache: [${langs_arr[*]}]. System: [${DEFAULT_LANGUAGES[*]}]."
-        # Consider resetting LANGUAGES_FILE to a sane state here if this error occurs.
     fi
 }
 

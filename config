@@ -47,9 +47,9 @@ for_window [app_id="firefox" title="^Picture-in-Picture$"] border none, floating
 
 ### Input
 input "type:keyboard" {
-    xkb_layout us,ru
-    xkb_variant dvorak,
-    xkb_options grp:win_space_toggle
+    xkb_layout us,ru,ua
+    xkb_variant dvorak,,
+    # xkb_options grp:win_space_toggle
 }
 
 ### Key bindings
@@ -177,6 +177,10 @@ bindsym $mod+r mode "resize"
 
 bindsym Print exec $screenshot
 bindsym Print+Shift exec $screenshotAll
+
+bindcode 133 exec '$HOME/.config/sway/scripts/keyboard.sh press_super'
+bindcode --release 133 exec '$HOME/.config/sway/scripts/keyboard.sh release_super'
+bindsym $mod+Space exec '$HOME/.config/sway/scripts/keyboard.sh toggle_language'
 
  exec swaymsg 'exec $bar' 
 

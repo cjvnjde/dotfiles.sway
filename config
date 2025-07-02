@@ -23,8 +23,12 @@ set $menu "rofi -monitor 1 -combi-modes drun,run -show combi -show-icons"
 set $calc "rofi -monitor 1 -show calc"
 set $bar "$HOME/.config/waybar/start-waybar.sh -t sway"
 #set $screenshot 'grim -g "$(slurp)" - | wl-copy'
-set $screenshotAll 'grim - | wl-copy'
-set $screenshot '$HOME/.config/sway/scripts/screenshot.sh'
+# set $screenshotAll 'flatpak run be.alexandervanhee.gradia --screenshot=FULL'
+# set $screenshot 'flatpak run be.alexandervanhee.gradia --screenshot=INTERACTIVE'
+
+set $screenshotFull '$HOME/.config/sway/scripts/screenshot.sh full'
+set $screenshotWindow '$HOME/.config/sway/scripts/screenshot.sh window'
+set $screenshotArea '$HOME/.config/sway/scripts/screenshot.sh area'
 
 ### Output configuration
 output "*" bg "$HOME/.config/sway/asstets/bg.jpg" fill
@@ -35,8 +39,9 @@ output "*" bg "$HOME/.config/sway/asstets/bg.jpg" fill
 output DP-1 resolution 2560x1440
 workspace 9 output HDMI-A-1
 
-for_window [title="flameshot" app_id="flameshot"] fullscreen enable global
+# for_window [title="flameshot" app_id="flameshot"] fullscreen enable global
 for_window [app_id="firefox" title="^Picture-in-Picture$"] border none, floating enable, sticky enable
+# for_window [app_id="be.alexandervanhee.gradia"] floating enable
 
 
 ### Idle
@@ -175,8 +180,9 @@ mode "resize" {
 
 bindsym $mod+r mode "resize"
 
-bindsym Print exec $screenshot
-bindsym Print+Shift exec $screenshotAll
+bindsym Print exec $screenshotArea
+bindsym Print+Shift exec $screenshotFull
+bindsym Print+Control exec $screenshotWindow
 
 bindcode 133 exec '$HOME/.config/sway/scripts/keyboard.sh press_super'
 bindcode --release 133 exec '$HOME/.config/sway/scripts/keyboard.sh release_super'

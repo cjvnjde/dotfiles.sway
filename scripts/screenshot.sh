@@ -8,7 +8,8 @@ DUNST_CMD="dunstify"
 # Screenshot enhancement settings
 PADDING=20  # Padding in pixels
 CORNER_RADIUS=10  # Corner radius for rounded corners
-BACKGROUND_COLOR="#2e3440"  # Background color for padding (Nordic theme)
+GRADIENT_START="#4a90e2"  # Left side gradient color (Nordic theme)
+GRADIENT_END="#50e3c2"    # Right side gradient color
 
 # Parse command line arguments
 MODE="${1:-area}"  # Default to area if no argument provided
@@ -56,6 +57,14 @@ add_padding_and_corners() {
         return 0
     fi
     
+    # Get dimensions of the original image
+    local original_width=$(identify -ping -format "%w" "$input_file")
+    local original_height=$(identify -ping -format "%h" "$input_file")
+    
+    # Calculate final dimensions with padding
+    local final_width=$((original_width + 2 * PADDING))
+    local final_height=$((original_height + 2 * PADDING))
+    
     # First, apply rounded corners to the original image
     local temp_rounded="$SCREENSHOT_DIR/temp_rounded_${TIMESTAMP}.${FILE_FORMAT}"
     
@@ -69,10 +78,14 @@ add_padding_and_corners() {
         \) -alpha off -compose CopyOpacity -composite \
         "$temp_rounded"
     
-    # Then add sharp padding around the rounded image
-    convert "$temp_rounded" \
-        -bordercolor "$BACKGROUND_COLOR" \
-        -border ${PADDING}x${PADDING} \
+    # Create gradient background (left to right) and place rounded image on top
+    convert -size ${final_width}x${final_height} \
+        xc:"${GRADIENT_START}" \
+        \( -size ${final_width}x1 gradient:"${GRADIENT_START}-${GRADIENT_END}" -scale ${final_width}x${final_height}! \) \
+        -compose over -composite \
+        "$temp_rounded" \
+        -gravity center \
+        -composite \
         "$output_file"
     
     # Clean up temporary files

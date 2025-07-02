@@ -30,6 +30,10 @@ set $screenshotFull '$HOME/.config/sway/scripts/screenshot.sh full'
 set $screenshotWindow '$HOME/.config/sway/scripts/screenshot.sh window'
 set $screenshotArea '$HOME/.config/sway/scripts/screenshot.sh area'
 
+set $screenshotFullSwappy '$HOME/.config/sway/scripts/screenshot.sh full swappy'
+set $screenshotWindowSwappy '$HOME/.config/sway/scripts/screenshot.sh window swappy'
+set $screenshotAreaSwappy '$HOME/.config/sway/scripts/screenshot.sh area swappy'
+
 ### Output configuration
 output "*" bg "$HOME/.config/sway/asstets/bg.jpg" fill
 # vertical view
@@ -183,6 +187,10 @@ bindsym $mod+r mode "resize"
 bindsym Print exec $screenshotArea
 bindsym Print+Shift exec $screenshotFull
 bindsym Print+Control exec $screenshotWindow
+
+bindsym Alt+Print exec $screenshotAreaSwappy
+bindsym Alt+Print+Shift exec $screenshotFullSwappy
+bindsym Alt+Print+Control exec $screenshotWindowSwappy
 
 bindcode 133 exec '$HOME/.config/sway/scripts/keyboard.sh press_super'
 bindcode --release 133 exec '$HOME/.config/sway/scripts/keyboard.sh release_super'

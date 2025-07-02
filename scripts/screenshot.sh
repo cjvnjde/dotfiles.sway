@@ -5,15 +5,30 @@ TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 FILE_FORMAT="png"
 DUNST_CMD="dunstify"
 
+# Screenshot enhancement settings
+PADDING=20  # Padding in pixels
+CORNER_RADIUS=10  # Corner radius for rounded corners
+BACKGROUND_COLOR="#2e3440"  # Background color for padding (Nordic theme)
+
 # Parse command line arguments
 MODE="${1:-area}"  # Default to area if no argument provided
+USE_SWAPPY=false
+
+# Check if Alt modifier is pressed (passed as second argument)
+if [ "$2" = "swappy" ] || [ "$2" = "alt" ]; then
+    USE_SWAPPY=true
+fi
 
 show_usage() {
-    echo "Usage: $0 [area|full|window|output]"
+    echo "Usage: $0 [area|full|window|output] [swappy|alt]"
     echo "  area   - Select an area to capture (default)"
     echo "  full   - Capture all monitors"
     echo "  window - Select an application window to capture"
     echo "  output - Select a monitor/output to capture"
+    echo ""
+    echo "  swappy - Open in swappy for annotation (use with Alt key)"
+    echo ""
+    echo "Example: $0 area swappy"
     exit 1
 }
 
@@ -30,9 +45,47 @@ get_window_at_cursor() {
         "\(.rect.x),\(.rect.y) \(.rect.width)x\(.rect.height)" | @sh' | head -1 | tr -d "'"
 }
 
+add_padding_and_corners() {
+    local input_file="$1"
+    local output_file="$2"
+    
+    # Check if ImageMagick is available
+    if ! command -v convert &> /dev/null; then
+        echo "ImageMagick not found. Install it with: sudo pacman -S imagemagick"
+        cp "$input_file" "$output_file"
+        return 0
+    fi
+    
+    # First, apply rounded corners to the original image
+    local temp_rounded="$SCREENSHOT_DIR/temp_rounded_${TIMESTAMP}.${FILE_FORMAT}"
+    
+    # Create rounded corners mask and apply to original image
+    convert "$input_file" \
+        \( +clone -alpha extract \
+           -draw "fill black polygon 0,0 0,${CORNER_RADIUS} ${CORNER_RADIUS},0 \
+                  fill white circle ${CORNER_RADIUS},${CORNER_RADIUS} ${CORNER_RADIUS},0" \
+           \( +clone -flip \) -compose Multiply -composite \
+           \( +clone -flop \) -compose Multiply -composite \
+        \) -alpha off -compose CopyOpacity -composite \
+        "$temp_rounded"
+    
+    # Then add sharp padding around the rounded image
+    convert "$temp_rounded" \
+        -bordercolor "$BACKGROUND_COLOR" \
+        -border ${PADDING}x${PADDING} \
+        "$output_file"
+    
+    # Clean up temporary files
+    rm "$temp_rounded"
+    if [ "$input_file" != "$output_file" ]; then
+        rm "$input_file"
+    fi
+}
+
 save_screenshot() {
     mkdir -p "$SCREENSHOT_DIR"
-    local filename="$SCREENSHOT_DIR/screenshot_${TIMESTAMP}.${FILE_FORMAT}"
+    local temp_filename="$SCREENSHOT_DIR/temp_screenshot_${TIMESTAMP}.${FILE_FORMAT}"
+    local final_filename="$SCREENSHOT_DIR/screenshot_${TIMESTAMP}.${FILE_FORMAT}"
     local geometry=""
     local capture_cmd=""
 
@@ -43,10 +96,10 @@ save_screenshot() {
                 "$DUNST_CMD" "Screenshot cancelled" -u low
                 return 1
             fi
-            capture_cmd="grim -g \"$geometry\" \"$filename\""
+            capture_cmd="grim -g \"$geometry\" \"$temp_filename\""
             ;;
         full)
-            capture_cmd="grim \"$filename\""
+            capture_cmd="grim \"$temp_filename\""
             ;;
         window)
             # Get all windows and let user select one
@@ -60,7 +113,7 @@ save_screenshot() {
                 "$DUNST_CMD" "No window selected" -u low
                 return 1
             fi
-            capture_cmd="grim -g \"$geometry\" \"$filename\""
+            capture_cmd="grim -g \"$geometry\" \"$temp_filename\""
             ;;
         output)
             # Use slurp -o for monitor/output selection
@@ -69,7 +122,7 @@ save_screenshot() {
                 "$DUNST_CMD" "No output selected" -u low
                 return 1
             fi
-            capture_cmd="grim -g \"$geometry\" \"$filename\""
+            capture_cmd="grim -g \"$geometry\" \"$temp_filename\""
             ;;
         *)
             show_usage
@@ -80,28 +133,62 @@ save_screenshot() {
     eval $capture_cmd
 
     if [ $? -ne 0 ]; then
-        "$DUNST_CMD" "Error saving screenshot to $filename" -u critical -i error
+        "$DUNST_CMD" "Error capturing screenshot" -u critical -i error
         return 1
     fi
 
-    # Copy to clipboard
-    wl-copy < "$filename"
+    # Add padding and rounded corners
+    add_padding_and_corners "$temp_filename" "$final_filename"
 
-    # Notify user
-    case "$MODE" in
-        area)
-            "$DUNST_CMD" "Area screenshot saved to $filename and copied to clipboard." -u low -i image
-            ;;
-        full)
-            "$DUNST_CMD" "Full screenshot saved to $filename and copied to clipboard." -u low -i image
-            ;;
-        window)
-            "$DUNST_CMD" "Window screenshot saved to $filename and copied to clipboard." -u low -i image
-            ;;
-        output)
-            "$DUNST_CMD" "Output screenshot saved to $filename and copied to clipboard." -u low -i image
-            ;;
-    esac
+    # If swappy is requested, open the screenshot in swappy
+    if [ "$USE_SWAPPY" = true ]; then
+        if command -v swappy &> /dev/null; then
+            # Create a temporary file for swappy output
+            local swappy_output="$SCREENSHOT_DIR/swappy_${TIMESTAMP}.${FILE_FORMAT}"
+            
+            # Open swappy with the screenshot
+            swappy -f "$final_filename" -o "$swappy_output"
+            
+            # Check if swappy saved a file (user didn't cancel)
+            if [ -f "$swappy_output" ]; then
+                # Replace the original with swappy output
+                mv "$swappy_output" "$final_filename"
+                
+                # Copy to clipboard
+                wl-copy < "$final_filename"
+                
+                "$DUNST_CMD" "Screenshot edited and saved to $final_filename" -u low -i image
+            else
+                # User cancelled swappy, still keep the original
+                wl-copy < "$final_filename"
+                "$DUNST_CMD" "Screenshot saved to $final_filename (swappy cancelled)" -u low -i image
+            fi
+        else
+            "$DUNST_CMD" "Swappy not found. Install it with: sudo pacman -S swappy" -u normal
+            # Fall back to normal behavior
+            wl-copy < "$final_filename"
+            "$DUNST_CMD" "Screenshot saved to $final_filename and copied to clipboard." -u low -i image
+        fi
+    else
+        # Normal mode - just copy to clipboard and notify
+        wl-copy < "$final_filename"
+        
+        # Notify user
+        case "$MODE" in
+            area)
+                "$DUNST_CMD" "Area screenshot saved to $final_filename and copied to clipboard." -u low -i image
+                ;;
+            full)
+                "$DUNST_CMD" "Full screenshot saved to $final_filename and copied to clipboard." -u low -i image
+                ;;
+            window)
+                "$DUNST_CMD" "Window screenshot saved to $final_filename and copied to clipboard." -u low -i image
+                ;;
+            output)
+                "$DUNST_CMD" "Output screenshot saved to $final_filename and copied to clipboard." -u low -i image
+                ;;
+        esac
+    fi
 
     return 0
 }

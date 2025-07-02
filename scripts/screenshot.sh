@@ -1,4 +1,4 @@
-#!/bin/bash
+!/bin/bash
 
 SCREENSHOT_DIR="$HOME/Pictures"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
@@ -21,9 +21,8 @@ if [ "$2" = "swappy" ] || [ "$2" = "alt" ]; then
 fi
 
 show_usage() {
-    echo "Usage: $0 [area|full|window|output] [swappy|alt]"
+    echo "Usage: $0 [area|window|output] [swappy|alt]"
     echo "  area   - Select an area to capture (default)"
-    echo "  full   - Capture all monitors"
     echo "  window - Select an application window to capture"
     echo "  output - Select a monitor/output to capture"
     echo ""
@@ -111,9 +110,6 @@ save_screenshot() {
             fi
             capture_cmd="grim -g \"$geometry\" \"$temp_filename\""
             ;;
-        full)
-            capture_cmd="grim \"$temp_filename\""
-            ;;
         window)
             # Get all windows and let user select one
             "$DUNST_CMD" "Click on a window to capture" -t 2000
@@ -144,7 +140,6 @@ save_screenshot() {
 
     # Execute the capture command
     eval $capture_cmd
-
     if [ $? -ne 0 ]; then
         "$DUNST_CMD" "Error capturing screenshot" -u critical -i error
         return 1
@@ -191,9 +186,6 @@ save_screenshot() {
             area)
                 "$DUNST_CMD" "Area screenshot saved to $final_filename and copied to clipboard." -u low -i image
                 ;;
-            full)
-                "$DUNST_CMD" "Full screenshot saved to $final_filename and copied to clipboard." -u low -i image
-                ;;
             window)
                 "$DUNST_CMD" "Window screenshot saved to $final_filename and copied to clipboard." -u low -i image
                 ;;
@@ -208,7 +200,7 @@ save_screenshot() {
 
 # Validate argument
 case "$1" in
-    area|full|window|output|"")
+    area|window|output|"")
         save_screenshot
         ;;
     -h|--help|help)

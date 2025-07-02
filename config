@@ -26,11 +26,11 @@ set $bar "$HOME/.config/waybar/start-waybar.sh -t sway"
 # set $screenshotAll 'flatpak run be.alexandervanhee.gradia --screenshot=FULL'
 # set $screenshot 'flatpak run be.alexandervanhee.gradia --screenshot=INTERACTIVE'
 
-set $screenshotFull '$HOME/.config/sway/scripts/screenshot.sh full'
+set $screenshotFull '$HOME/.config/sway/scripts/screenshot.sh output'
 set $screenshotWindow '$HOME/.config/sway/scripts/screenshot.sh window'
 set $screenshotArea '$HOME/.config/sway/scripts/screenshot.sh area'
 
-set $screenshotFullSwappy '$HOME/.config/sway/scripts/screenshot.sh full swappy'
+set $screenshotFullSwappy '$HOME/.config/sway/scripts/screenshot.sh output swappy'
 set $screenshotWindowSwappy '$HOME/.config/sway/scripts/screenshot.sh window swappy'
 set $screenshotAreaSwappy '$HOME/.config/sway/scripts/screenshot.sh area swappy'
 
@@ -185,17 +185,17 @@ mode "resize" {
 bindsym $mod+r mode "resize"
 
 bindsym Print exec $screenshotArea
-bindsym Print+Shift exec $screenshotFull
-bindsym Print+Control exec $screenshotWindow
+bindsym Shift+Print exec $screenshotFull
+bindsym ALt+Print exec $screenshotWindow
 
-bindsym Alt+Print exec $screenshotAreaSwappy
-bindsym Alt+Print+Shift exec $screenshotFullSwappy
-bindsym Alt+Print+Control exec $screenshotWindowSwappy
+bindsym Ctrl+Print exec $screenshotAreaSwappy
+bindsym Ctrl+Shift+Print exec $screenshotFullSwappy
+bindsym Ctrl+Alt+Print exec $screenshotWindowSwappy
 
 bindcode 133 exec '$HOME/.config/sway/scripts/keyboard.sh press_super'
 bindcode --release 133 exec '$HOME/.config/sway/scripts/keyboard.sh release_super'
 bindsym $mod+Space exec '$HOME/.config/sway/scripts/keyboard.sh toggle_language'
 
- exec swaymsg 'exec $bar' 
+exec swaymsg 'exec $bar' 
 
 include /etc/sway/config.d/*

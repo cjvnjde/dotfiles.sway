@@ -6,7 +6,7 @@ FILE_FORMAT="png"
 DUNST_CMD="dunstify"
 
 # Screenshot enhancement settings
-PADDING=20  # Padding in pixels
+PADDING=10  # Padding in pixels
 CORNER_RADIUS=10  # Corner radius for rounded corners
 GRADIENT_START="#4a90e2"  # Left side gradient color (Nordic theme)
 GRADIENT_END="#50e3c2"    # Right side gradient color

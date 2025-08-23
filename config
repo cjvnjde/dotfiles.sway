@@ -34,6 +34,8 @@ set $screenshotFullSwappy '$HOME/.config/sway/scripts/screenshot.sh output swapp
 set $screenshotWindowSwappy '$HOME/.config/sway/scripts/screenshot.sh window swappy'
 set $screenshotAreaSwappy '$HOME/.config/sway/scripts/screenshot.sh area swappy'
 
+set $screenshotAA 'grim - | wl-copy'
+
 ### Output configuration
 output "*" bg "$HOME/.config/sway/asstets/bg.jpg" fill
 # vertical view
@@ -188,6 +190,7 @@ bindsym $mod+r mode "resize"
 bindsym Print exec $screenshotArea
 bindsym Shift+Print exec $screenshotFull
 bindsym ALt+Print exec $screenshotWindow
+bindsym $mod+Print exec $screenshotAA
 
 bindsym Ctrl+Print exec $screenshotAreaSwappy
 bindsym Ctrl+Shift+Print exec $screenshotFullSwappy

@@ -1,0 +1,7 @@
+# output HDMI-A-1 resolution 1920x1080 position 0,0 transform 270
+# output DP-1 resolution 2560x1440 position 1080,480
+# output HDMI-A-1 disable
+# output DP-1 resolution 2560x1440
+# workspace 9 output HDMI-A-1
+
+output DP-1 resolution 2560x1440

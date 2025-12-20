@@ -17,7 +17,7 @@ set $left h
 set $down j
 set $up k
 set $right l
-set $term alacritty
+set $term wezterm
 
 set $menu "rofi -monitor 0 -combi-modes drun,run -show combi -show-icons -run-command '/home/cjvnjde/.config/sway/scripts/rofi-wrapper.sh {cmd}'"
 set $calc "rofi -monitor 0 -show calc -run-command '/home/cjvnjde/.config/sway/scripts/rofi-wrapper.sh {cmd}'"

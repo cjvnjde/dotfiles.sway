@@ -1,0 +1,5 @@
+# set $term ghostty
+# set $term alacritty
+# set $term wezterm
+
+set $term ghostty

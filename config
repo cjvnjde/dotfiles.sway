@@ -64,6 +64,13 @@ input "type:keyboard" {
 ### Key bindings
 # Start a terminal
 bindsym $mod+Return exec $term
+# Dropdown Terminal
+for_window [app_id="dropdown-terminal"] floating enable, resize set width 100vw height 40vh, move position 0 0, move scratchpad
+exec $term --class=dropdown-terminal
+bindsym $mod+Shift+Return [app_id="dropdown-terminal"] scratchpad show
+
+# Auto-hide on focus loss
+exec ~/.config/sway/scripts/dropdown-watcher.sh
 
 # Kill focused window
 bindsym $mod+w kill 

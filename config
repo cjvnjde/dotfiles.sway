@@ -22,7 +22,6 @@ set $right l
 
 set $menu "rofi -monitor 0 -combi-modes drun,run -show combi -show-icons"
 set $calc "rofi -monitor 0 -show calc"
-set $bar "$HOME/.config/waybar/start-waybar.sh -t sway"
 
 set $screenshotFull '$HOME/.config/sway/scripts/screenshot.sh output'
 set $screenshotWindow '$HOME/.config/sway/scripts/screenshot.sh window'
@@ -160,6 +159,6 @@ bindcode --release 133 exec '$HOME/.config/sway/scripts/keyboard.sh release_supe
 bindsym $mod+Space exec '$HOME/.config/sway/scripts/keyboard.sh toggle_language'
 
 # ─── Autostart ────────────────────────────────────────────────────────────────
-exec swaymsg 'exec $bar'
+exec waybar
 
 include /etc/sway/config.d/*

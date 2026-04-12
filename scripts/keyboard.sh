@@ -8,55 +8,48 @@ CACHE_BASE_PATH="$HOME/.cache"
 LANG_SWITCHER_DIR="$CACHE_BASE_PATH/language_switcher"
 SUPER_PRESSED_FILE="$LANG_SWITCHER_DIR/super_pressed_state"
 LANGUAGES_FILE="$LANG_SWITCHER_DIR/languages_list"
+BASE_LANGUAGES_FILE="$LANG_SWITCHER_DIR/base_languages"
 SPACE_COUNT_FILE="$LANG_SWITCHER_DIR/space_press_count"
 
-# Fetch current keyboard information from sway
-current_inputs=$(swaymsg -t get_inputs -r)
-json_data=$(echo "$current_inputs" | jq -r 'first(.[] | select(.type == "keyboard" and .xkb_layout_names)) // empty')
-
-if [[ -z "$json_data" ]]; then
-    dunstify -u critical "Language Switcher" "No keyboard with xkb_layout_names found."
-    exit 1
-fi
-
-identifier=$(echo "$json_data" | jq -r '.identifier')
-if [[ -z "$identifier" ]]; then
-    dunstify -u critical "Language Switcher" "Could not get keyboard identifier."
-    exit 1
-fi
-
-mapfile -t DEFAULT_LANGUAGES < <(echo "$json_data" | jq -r '.xkb_layout_names[]?' | tr ' ' '_')
-xkb_active_layout_index=$(echo "$json_data" | jq -r '.xkb_active_layout_index // "0"')
-
-if [[ ${#DEFAULT_LANGUAGES[@]} -eq 0 ]] || [[ -z "${DEFAULT_LANGUAGES[0]}" ]]; then
-    dunstify -u critical "Language Switcher" "No layout names found for '$identifier'."
-    exit 1
-fi
-
-if ! [[ "$xkb_active_layout_index" =~ ^[0-9]+$ ]] || [[ "$xkb_active_layout_index" -ge "${#DEFAULT_LANGUAGES[@]}" ]]; then
-    xkb_active_layout_index=0
-fi
-
-# Format and show notification: [active] - next - rest
-_notify_layout() {
-    local -a langs=("$@")
-    local parts=()
-    for i in "${!langs[@]}"; do
-        if [[ $i -eq 0 ]]; then
-            parts+=("[${langs[$i]}]")
-        else
-            parts+=("${langs[$i]}")
-        fi
-    done
-    local display
-    display=$(IFS=' - '; echo "${parts[*]}")
-    dunstify -r "$NOTIFY_ID" "Keyboard" "$display"
-}
-
-_init_cache() {
+# Ensure cache directory and flag files exist (fast, no IPC)
+_ensure_cache_dir() {
     mkdir -p "$LANG_SWITCHER_DIR"
     [[ -f "$SUPER_PRESSED_FILE" ]] || echo "false" > "$SUPER_PRESSED_FILE"
+    [[ -f "$SPACE_COUNT_FILE" ]] || echo "0" > "$SPACE_COUNT_FILE"
+}
 
+# Fetch keyboard data from sway IPC (only needed by toggle_language)
+_fetch_keyboard_data() {
+    local current_inputs
+    current_inputs=$(swaymsg -t get_inputs -r)
+    json_data=$(echo "$current_inputs" | jq -r 'first(.[] | select(.type == "keyboard" and .xkb_layout_names)) // empty')
+
+    if [[ -z "$json_data" ]]; then
+        dunstify -u critical "Language Switcher" "No keyboard with xkb_layout_names found."
+        exit 1
+    fi
+
+    identifier=$(echo "$json_data" | jq -r '.identifier')
+    if [[ -z "$identifier" ]]; then
+        dunstify -u critical "Language Switcher" "Could not get keyboard identifier."
+        exit 1
+    fi
+
+    mapfile -t DEFAULT_LANGUAGES < <(echo "$json_data" | jq -r '.xkb_layout_names[]?' | tr ' ' '_')
+    xkb_active_layout_index=$(echo "$json_data" | jq -r '.xkb_active_layout_index // "0"')
+
+    if [[ ${#DEFAULT_LANGUAGES[@]} -eq 0 ]] || [[ -z "${DEFAULT_LANGUAGES[0]}" ]]; then
+        dunstify -u critical "Language Switcher" "No layout names found for '$identifier'."
+        exit 1
+    fi
+
+    if ! [[ "$xkb_active_layout_index" =~ ^[0-9]+$ ]] || [[ "$xkb_active_layout_index" -ge "${#DEFAULT_LANGUAGES[@]}" ]]; then
+        xkb_active_layout_index=0
+    fi
+}
+
+# Initialize languages cache file if missing (needs sway data)
+_init_languages_cache() {
     if [[ ! -f "$LANGUAGES_FILE" ]]; then
         if [[ ${#DEFAULT_LANGUAGES[@]} -gt 0 ]]; then
             local active="${DEFAULT_LANGUAGES[$xkb_active_layout_index]}"
@@ -67,8 +60,20 @@ _init_cache() {
             echo "${ordered[*]}" > "$LANGUAGES_FILE"
         fi
     fi
+}
 
-    [[ -f "$SPACE_COUNT_FILE" ]] || echo "0" > "$SPACE_COUNT_FILE"
+# Format and show notification: [active] - next - rest
+_notify_layout() {
+    local -a langs=("$@")
+    local display=""
+    for i in "${!langs[@]}"; do
+        if [[ $i -eq 0 ]]; then
+            display="[${langs[$i]}]"
+        else
+            display+=" - ${langs[$i]}"
+        fi
+    done
+    dunstify -r "$NOTIFY_ID" -t 1500 "Keyboard" "$display"
 }
 
 # Swap first two elements of array (passed by nameref)
@@ -118,27 +123,31 @@ _apply_layout() {
     fi
 }
 
+# --- Public functions (called from sway keybindings) ---
+
 press_super() {
-    _init_cache
+    _ensure_cache_dir
     echo "true" > "$SUPER_PRESSED_FILE"
     echo "0" > "$SPACE_COUNT_FILE"
 }
 
 release_super() {
-    _init_cache
+    _ensure_cache_dir
     echo "false" > "$SUPER_PRESSED_FILE"
 }
 
 toggle_language() {
-    _init_cache
+    _ensure_cache_dir
+    _fetch_keyboard_data
+    _init_languages_cache
 
     local super_is_pressed
-    super_is_pressed=$(cat "$SUPER_PRESSED_FILE")
+    super_is_pressed=$(<"$SUPER_PRESSED_FILE")
     local space_count
-    space_count=$(cat "$SPACE_COUNT_FILE")
+    space_count=$(<"$SPACE_COUNT_FILE")
 
     local languages_str
-    languages_str=$(cat "$LANGUAGES_FILE")
+    languages_str=$(<"$LANGUAGES_FILE")
     local langs
     read -r -a langs <<< "$languages_str"
     local num=${#langs[@]}
@@ -169,24 +178,30 @@ toggle_language() {
         echo "$space_count" > "$SPACE_COUNT_FILE"
 
         if [[ "$space_count" -eq 1 ]]; then
-            # First press with super held: short switch (swap first two)
+            # First press with super held: swap (correct for single-press toggle)
+            # Save base state for cycling calculation on subsequent presses
+            echo "${langs[*]}" > "$BASE_LANGUAGES_FILE"
             _swap_first_two langs
         else
-            # 2nd+ press with super held: rotate left
-            _rotate_left langs
+            # 2nd+ press: compute from saved base state using pure rotation
+            if [[ -f "$BASE_LANGUAGES_FILE" ]]; then
+                read -r -a langs < "$BASE_LANGUAGES_FILE"
+            fi
+            local rotations=$((space_count % num))
+            for ((i=0; i<rotations; i++)); do
+                _rotate_left langs
+            done
         fi
     else
-        # No super: short switch (swap first two)
+        # No super held: simple swap first two
         _swap_first_two langs
     fi
 
     _apply_layout "${langs[0]}" "${langs[@]}"
 }
 
-# Dispatch
-if [[ -n "$1" ]] && declare -f "$1" > /dev/null; then
-    "$@"
-else
-    echo "Usage: $0 {press_super|release_super|toggle_language}"
-    exit 1
-fi
+# --- Dispatch ---
+case "${1-}" in
+    press_super|release_super|toggle_language) "$@" ;;
+    *) echo "Usage: $0 {press_super|release_super|toggle_language}"; exit 1 ;;
+esac
